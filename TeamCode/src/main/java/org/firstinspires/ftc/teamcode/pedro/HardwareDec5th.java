@@ -25,6 +25,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import static org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.CM;
 import android.util.Size;
 
+
 public class HardwareDec5th {
     //    //From LEGION
     HardwareMap hwMap =  null;
@@ -301,8 +302,6 @@ public class HardwareDec5th {
     }
 
     // /////////////////////////////////20261104 motors////////////////
-
-
     public void setMotorPower(double lF, double rF, double lB, double rB){
         leftFrontMotor.setPower(lF*DriveTrains_POWER);
         leftRearMotor.setPower(lB*DriveTrains_POWER);
@@ -311,7 +310,6 @@ public class HardwareDec5th {
     }
 
 // /////////////////////////////////20261104 motors////////////////
-
 
     public void setAllPower(double p){
         setMotorPower(p,p,p,p);
