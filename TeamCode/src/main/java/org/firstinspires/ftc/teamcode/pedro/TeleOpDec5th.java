@@ -577,8 +577,6 @@ public class TeleOpDec5th extends LinearOpMode {
         return - revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO;
     }
 
-
-
 //    public double getCurrentAngleOfTurret() {
 //        if (robot.revEncoder == null) {
 //            telemetry.addData("Warning", "revEncoderForTurret is null in getCurrentAngleofTurret()");
