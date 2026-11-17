@@ -575,7 +575,6 @@ public class TeleOpDec5th extends LinearOpMode {
         telemetry.addData(" -revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO ",  -revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO);
         telemetry.addData(" -revolutions angle ",  Math.toDegrees(-revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO));
         return - revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO;
-
     }
 
 
