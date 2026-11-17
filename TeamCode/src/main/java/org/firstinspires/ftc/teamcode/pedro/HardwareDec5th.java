@@ -220,7 +220,6 @@ public class HardwareDec5th {
         myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
         myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
         myAprilTagProcessor = myAprilTagProcessorBuilder.build();
-
 // 2. 创建 VisionPortal.Builder 实例后再调用 setCamera
         myVisionPortalBuilder = new VisionPortal.Builder();
         myVisionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
