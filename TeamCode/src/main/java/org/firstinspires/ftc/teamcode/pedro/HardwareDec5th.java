@@ -140,7 +140,7 @@ public class HardwareDec5th {
 //        IntakeMotorL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 //        IntakeMotorR.setDirection(DcMotorSimple.Direction.REVERSE);
 //        IntakeMotorR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-////
+//
 //        voltageCHub = hwMap.get(VoltageSensor.class, "Control Hub");
 //        voltageExHub = hwMap.get(VoltageSensor.class, "Expansion Hub 2");
 //
@@ -297,10 +297,6 @@ public class HardwareDec5th {
         greenLED.setMode(DigitalChannel.Mode.OUTPUT);
         redLED.setState(true);
         greenLED.setState(true);
-
-
-
-
 
     }
 
