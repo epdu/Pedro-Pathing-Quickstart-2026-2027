@@ -21,13 +21,15 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import static org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.CM;
 import android.util.Size;
+import com.qualcomm.hardware.lynx.LynxModule;
+import java.util.List;
 
 
 public class HardwareDec5th {
     //    //From LEGION
+    public List<LynxModule> allHubs;
     HardwareMap hwMap =  null;
     public Alliance alliance;
     public double HoodArmsetPosition=0.51;
@@ -154,9 +156,15 @@ public class HardwareDec5th {
         IntakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         TransferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         TransferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-//
-        voltageCHub = hwMap.get(VoltageSensor.class, "Control Hub");
-        voltageExHub = hwMap.get(VoltageSensor.class, "Expansion Hub 2");
+
+        voltageCHub = hwMap.tryGet(VoltageSensor.class, "Control Hub");
+        voltageExHub = hwMap.tryGet(VoltageSensor.class, "Expansion Hub 2");
+        if (voltageExHub == null) {
+            voltageExHub = hwMap.tryGet(VoltageSensor.class, "Expansion Hub 3");
+        }
+
+
+
 /// /////////////////////////////////20261104 intake////////////////
         setAllPower(0);
 
@@ -212,16 +220,7 @@ public class HardwareDec5th {
 //        BlockageArmR.setDirection(Servo.Direction.REVERSE);
 //        BlockageArmR.setPosition(0.1);//
 /// /////////////////////////////////20261104 blockage////////////////
-// 1. 必须先创建 AprilTagProcessor.Builder 和 VisionPortal.Builder 的实例！
-        myAprilTagLibrary = AprilTagGameDatabase.getCurrentGameTagLibrary();
-        myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
-        myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
-        myAprilTagProcessor = myAprilTagProcessorBuilder.build();
-// 2. 创建 VisionPortal.Builder 实例后再调用 setCamera
-        myVisionPortalBuilder = new VisionPortal.Builder();
-        myVisionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
-        myVisionPortalBuilder.addProcessor(myAprilTagProcessor);
-        myVisionPortal = myVisionPortalBuilder.build();
+
 //        HoodArmL = hwMap.get(ServoImplEx.class, "HoodArmL");//expansion  hub port 3
 //        HoodArmL.setPwmRange(new PwmControl.PwmRange(500, 2500));
 //        HoodArmL.setDirection(Servo.Direction.REVERSE);
@@ -299,6 +298,15 @@ public class HardwareDec5th {
         redLED.setState(true);
         greenLED.setState(true);
 
+
+        // 获取 Control Hub 和 Expansion Hub，开启手动批量缓存模式（通信效率最高）
+        allHubs = hwMap.getAll(LynxModule.class);
+        for (LynxModule hub : allHubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+        }
+
+
+
     }
 
     // /////////////////////////////////20261104 motors////////////////
@@ -309,10 +317,50 @@ public class HardwareDec5th {
         rightFrontMotor.setPower(rF*DriveTrains_POWER);
     }
 
-///////////////////////////////////20261104 motors////////////////
+    public void initVision() {
+        // 1. 加载当前赛季 AprilTag 标签库
+        myAprilTagLibrary = AprilTagGameDatabase.getCurrentGameTagLibrary();
 
+        // 2. 配置并构建 AprilTag 处理器（仅需一次）
+        myAprilTagProcessorBuilder = new AprilTagProcessor.Builder();
+        myAprilTagProcessorBuilder.setTagLibrary(myAprilTagLibrary);
+        myAprilTagProcessorBuilder.setDrawTagID(true);
+        myAprilTagProcessorBuilder.setDrawTagOutline(true);
+        myAprilTagProcessorBuilder.setDrawAxes(true);
+        myAprilTagProcessorBuilder.setDrawCubeProjection(true);
+        myAprilTagProcessor = myAprilTagProcessorBuilder.build();
+
+        // 3. 配置并构建 VisionPortal（仅需一次）
+        myVisionPortalBuilder = new VisionPortal.Builder();
+        myVisionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
+        myVisionPortalBuilder.setCameraResolution(new Size(640, 480));
+        myVisionPortalBuilder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+        myVisionPortalBuilder.enableLiveView(true);
+        myVisionPortalBuilder.setAutoStopLiveView(true);
+        myVisionPortalBuilder.addProcessor(myAprilTagProcessor);
+        myVisionPortal = myVisionPortalBuilder.build();
+    }
+
+
+
+
+
+    ///////////////////////////////////20261104 motors////////////////
     public void setAllPower(double p){
         setMotorPower(p,p,p,p);
     }
+
+
+    // ✅ 就放在这里（setAllPower 方法结束之后，整个类结束的最后一个 } 之前）：
+    public void clearBulkCache() {
+        if (allHubs != null) {
+            for (LynxModule hub : allHubs) {
+                hub.clearBulkCache();
+            }
+        }
+    }
+
+
+
 
 }
