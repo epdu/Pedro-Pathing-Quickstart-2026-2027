@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
-
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -19,13 +18,12 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import static org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.CM;
-import android.util.Size;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-
+import static org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.CM;
+import android.util.Size;
 
 public class HardwareDec5th {
     //    //From LEGION
@@ -206,8 +204,6 @@ public class HardwareDec5th {
 //        public static final double blockageblockposition=0.10; //for auto
 //        public static final double blockagereleaseposition=0.38;
 
-
-
 /// /////////////////////////////////20261104 blockage////////////////
 //        BlockageArmR = hwMap.get(ServoImplEx.class, "BlockageArmR");// expansi
 //        // on  hub port 1
@@ -225,13 +221,10 @@ public class HardwareDec5th {
         myVisionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
         myVisionPortalBuilder.addProcessor(myAprilTagProcessor);
         myVisionPortal = myVisionPortalBuilder.build();
-
-
 //        HoodArmL = hwMap.get(ServoImplEx.class, "HoodArmL");//expansion  hub port 3
 //        HoodArmL.setPwmRange(new PwmControl.PwmRange(500, 2500));
 //        HoodArmL.setDirection(Servo.Direction.REVERSE);
 //        HoodArmL.setPosition(HoodArmsetPosition);
-//
 //        HoodArmR = hwMap.get(ServoImplEx.class, "HoodArmR");//expansion  hub port 5
 //        HoodArmR.setPwmRange(new PwmControl.PwmRange(500, 2500));
 ////        HoodArmR.setDirection(Servo.Direction.REVERSE);

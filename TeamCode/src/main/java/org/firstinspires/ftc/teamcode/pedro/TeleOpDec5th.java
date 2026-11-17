@@ -370,7 +370,6 @@ public class TeleOpDec5th extends LinearOpMode {
         robot.myAprilTagProcessorBuilder.setDrawAxes(true);
         robot.myAprilTagProcessorBuilder.setDrawCubeProjection(true);
         robot.myAprilTagProcessor = robot.myAprilTagProcessorBuilder.build();
-
         // ---- VisionPortal Builder ----
         robot.myVisionPortalBuilder = new VisionPortal.Builder();
         robot.myVisionPortalBuilder.setCamera(robot.hwMap.get(WebcamName.class, "Webcam 1"));
@@ -493,7 +492,6 @@ public class TeleOpDec5th extends LinearOpMode {
 //        robot.axonTurretArmL.changeTargetRotation(Math.toDegrees( pos-getPosition()));
 //        robot.axonTurretArmR.changeTargetRotation(Math.toDegrees(pos-getPosition()));
 
-
 //        setTurretPower(turretPower);
     }
     public void setTurretPower(double power) {
@@ -510,9 +508,9 @@ public class TeleOpDec5th extends LinearOpMode {
 //        robot.servoTurretArmL.setPower(power);
 //        robot.servoTurretArmR.setPower(power);
 
-
-
     }
+
+
 //    public double findPosition() {
 //        double x, y;
 //        double robotHeading;
