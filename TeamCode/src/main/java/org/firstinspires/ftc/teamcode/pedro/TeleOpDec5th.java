@@ -582,7 +582,6 @@ public class TeleOpDec5th extends LinearOpMode {
 //            telemetry.addData("Warning", "revEncoderForTurret is null in getCurrentAngleofTurret()");
 //            return 0.0;
 //        }
-//
 //        return ( robot.revEncoder.getCurrentPosition()/16384) * (direction.equals(RTPAxon.Direction.FORWARD) ? -360 : 360);
 //    }
 //    public void setPosition(double pos) {
