@@ -45,11 +45,12 @@ public class Constants {
         c.name.set("odo");
         c.xPodOffset.set(-8.033);
         c.yPodOffset.set(-1.9685);
-        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
         c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
     });
-
+    //////////////// tested on 11192026 robot located blue side facing 0 degree forward x decrease and move right y increase, so
+    ////////////// reversed encoder both. same as hardware
     public static ForesightConfig foresightConfig = new ForesightConfig(c -> {
         c.maxAchievableForwardVelocity.set(64.599);
         c.maxAchievableStrafeVelocity.set(51.33016);
