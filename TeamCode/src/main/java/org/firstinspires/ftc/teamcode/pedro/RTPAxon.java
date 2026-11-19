@@ -1,12 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
 import android.annotation.SuppressLint;
-
-//import com.acmerobotics.dashboard.FtcDashboard;
-//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.bylazar.configurables.annotations.Configurable;
-import com.bylazar.telemetry.PanelsTelemetry;
-import com.bylazar.telemetry.TelemetryManager;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,67 +10,47 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class RTPAxon {
-    // Encoder for servo position feedback
     private final DcMotorEx servoEncoder;
-    // Continuous rotation servo
     private final CRServo servo;
-    // Run-to-position mode flag
     private boolean rtp;
-    // Current power applied to servo
     private double power;
-    // Maximum allowed power
     private double maxPower;
-    // Direction of servo movement
     private Direction direction;
-    // Last measured angle
     private double previousAngle;
-    // Accumulated rotation in degrees
     private double totalRotation;
-    // Target rotation in degrees
     private double targetRotation;
 
-    // PID controller coefficients and state
-    private double kP;
-    private double kI;
-    private double kD;
-    private double integralSum;
-    private double lastError;
-    private double maxIntegralSum;
-    private ElapsedTime pidTimer;
-//    private TelemetryManager panelsTelemetry;
-    private static TelemetryManager panelsTelemetry;
+    // PID 参数与状态
+    private double kP = 0.015;
+    private double kI = 0.0005;
+    private double kD = 0.0025;
+    private double integralSum = 0.0;
+    private double lastError = 0.0;
+    private double maxIntegralSum = 100.0;
+    private final ElapsedTime pidTimer = new ElapsedTime();
 
-    // Initialization and debug fields
     public double STARTPOS;
     public int ntry = 0;
     public int cliffs = 0;
     public double homeAngle;
 
-    // Direction enum for servo
     public enum Direction {
         FORWARD,
         REVERSE
     }
 
-    // region constructors
-
-    // Basic constructor, defaults to FORWARD direction
     public RTPAxon(CRServo servo, DcMotorEx encoder) {
-        rtp = true;
-        this.servo = servo;
-        servoEncoder = encoder;
-        direction = Direction.FORWARD;
-        initialize();
+        this(servo, encoder, Direction.FORWARD);
     }
 
-    // Constructor with explicit direction
     public RTPAxon(CRServo servo, DcMotorEx encoder, Direction direction) {
-        this(servo, encoder);
+        this.rtp = true;
+        this.servo = servo;
+        this.servoEncoder = encoder;
         this.direction = direction;
         initialize();
     }
 
-    // Initialization logic for servo and encoder
     private void initialize() {
         servo.setPower(0);
         try {
@@ -84,68 +58,50 @@ public class RTPAxon {
         } catch (InterruptedException ignored) {
         }
 
-        // Try to get a valid starting position
         do {
             STARTPOS = getCurrentAngle();
             if (Math.abs(STARTPOS) > 1) {
-                previousAngle = getCurrentAngle();
+                previousAngle = STARTPOS;
             } else {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(20);
                 } catch (InterruptedException ignored) {
                 }
             }
             ntry++;
-        } while (Math.abs(previousAngle) < 0.2 && (ntry < 50));
+        } while (Math.abs(previousAngle) < 0.2 && (ntry < 25));
 
         totalRotation = 0;
         homeAngle = previousAngle;
-
-        // Default PID coefficients
-//        kP = 0.0;
-//        kI = 0.0000;
-//        kD = 0.00;
-        kP = 0.015;
-        kI = 0.0005;
-        kD = 0.0025;
         integralSum = 0.0;
         lastError = 0.0;
         maxIntegralSum = 100.0;
-        pidTimer = new ElapsedTime();
-        pidTimer.reset();
-
-        maxPower = 0.25;
+        maxPower = 0.5;
         cliffs = 0;
+        pidTimer.reset();
     }
-    // endregion
 
-    // Set servo direction
     public void setDirection(Direction direction) {
         this.direction = direction;
     }
 
-    // Set power to servo, respecting direction and maxPower
     public void setPower(double power) {
         this.power = Math.max(-maxPower, Math.min(maxPower, power));
         servo.setPower(this.power * (direction == Direction.REVERSE ? -1 : 1));
     }
 
-    // Get current power
     public double getPower() {
         return power;
     }
 
-    // Set maximum allowed power
     public void setMaxPower(double maxPower) {
         this.maxPower = maxPower;
     }
 
-    // Get maximum allowed power
     public double getMaxPower() {
         return maxPower;
     }
 
-    // Enable or disable run-to-position mode
     public void setRtp(boolean rtp) {
         this.rtp = rtp;
         if (rtp) {
@@ -153,134 +109,79 @@ public class RTPAxon {
         }
     }
 
-    // Get run-to-position mode state
     public boolean getRtp() {
         return rtp;
     }
 
-    // Set PID P coefficient
-    public void setKP(double kP) {
-        this.kP = kP;
-    }
-
-    // Set PID I coefficient and reset integral
-    public void setKI(double kI) {
-        this.kI = kI;
-        resetIntegral(); 
-    }
-
-    // Set PID D coefficient
-    public void setKD(double kD) {
-        this.kD = kD;
-    }
-
-    // Set all PID coefficients
-    public void setPidCoeffs(double kP, double kI, double kD){
+    public void setKP(double kP) { this.kP = kP; }
+    public void setKI(double kI) { this.kI = kI; resetIntegral(); }
+    public void setKD(double kD) { this.kD = kD; }
+    public void setPidCoeffs(double kP, double kI, double kD) {
         setKP(kP);
         setKI(kI);
         setKD(kD);
     }
 
-    // Get PID P coefficient
-    public double getKP() {
-        return kP;
-    }
+    public double getKP() { return kP; }
+    public double getKI() { return kI; }
+    public double getKD() { return kD; }
 
-    // Get PID I coefficient
-    public double getKI() {
-        return kI;
-    }
+    public double getTotalRotation() { return totalRotation; }
+    public double getTargetRotation() { return targetRotation; }
 
-    // Get PID D coefficient
-    public double getKD() {
-        return kD;
-    }
-
-    // Set only P coefficient (alias)
-    public void setK(double k) {
-        setKP(k);
-    }
-
-    // Get only P coefficient (alias)
-    public double getK() {
-        return getKP();
-    }
-
-    // Set maximum allowed integral sum
-    public void setMaxIntegralSum(double maxIntegralSum) {
-        this.maxIntegralSum = maxIntegralSum;
-    }
-
-    // Get maximum allowed integral sum
-    public double getMaxIntegralSum() {
-        return maxIntegralSum;
-    }
-
-    // Get total rotation since initialization
-    public double getTotalRotation() {
-        return totalRotation;
-    }
-
-    // Get current target rotation
-    public double getTargetRotation() {
-        return targetRotation;
-    }
-
-    // Increment target rotation by a value
     public void changeTargetRotation(double change) {
         targetRotation += change;
     }
 
-    // Set target rotation and reset PID
-    public void setTargetRotation(double target) {
-        targetRotation = target;
+    // 绝对目标角度设定（不重置积分项，适合每帧连续跟踪目标点）
+    public void trackTargetRotation(double targetDegrees) {
+        this.targetRotation = targetDegrees;
+    }
+
+    // 阶跃目标角度设定（重置 PID 状态，适合定点切换）
+    public void setTargetRotation(double targetDegrees) {
+        this.targetRotation = targetDegrees;
         resetPID();
     }
 
-    // Get current angle from encoder (in degrees)
     public double getCurrentAngle() {
         if (servoEncoder == null) return 0;
-//        return (servoEncoder.getCurrentPosition()/16384.0) * (direction.equals(Direction.FORWARD) ? -360 : 360);
-        return (servoEncoder.getCurrentPosition()/16384.0) * (direction.equals(Direction.REVERSE) ? -360 : 360);
-//        return (servoEncoder.getCurrentPosition()/8192.0) * (direction.equals(Direction.FORWARD) ? -360 : 360);
-//        return (servoEncoder.getCurrentPosition()/4046.0) * (direction.equals(Direction.REVERSE) ? -360 : 360);
+        // 注意：根据你们的齿轮减速比 (GEAR_RATIO)，如果 encoder 是直连炮台则乘以 GEAR_RATIO
+        return (servoEncoder.getCurrentPosition() / 8192.0) * (direction == Direction.REVERSE ? -360.0 : 360.0) * TurretConstants.GEAR_RATIO;
     }
 
-    // Check if servo is at target (default tolerance)
     public boolean isAtTarget() {
-        return isAtTarget(5);
+        return isAtTarget(3.0);
     }
 
-    // Check if servo is at target (custom tolerance)
-    public boolean isAtTarget(double tolerance) {
-        return Math.abs(targetRotation - totalRotation) < tolerance;
+    public boolean isAtTarget(double toleranceDegrees) {
+        return Math.abs(targetRotation - totalRotation) < toleranceDegrees;
     }
 
-    // Force reset total rotation and PID state
+    public double getError() {
+        return targetRotation - totalRotation;
+    }
+
     public void forceResetTotalRotation() {
         totalRotation = 0;
         previousAngle = getCurrentAngle();
         resetPID();
     }
 
-    // Reset PID controller state
     public void resetPID() {
         resetIntegral();
         lastError = 0;
         pidTimer.reset();
     }
 
-    // Reset integral sum
     public void resetIntegral() {
         integralSum = 0;
     }
 
-    // Main update loop: updates rotation, computes PID, applies power
     public synchronized void update() {
         double currentAngle = getCurrentAngle();
         double angleDifference = currentAngle - previousAngle;
 
-        // Handle wraparound at 0/360 degrees
         if (angleDifference > 180) {
             angleDifference -= 360;
             cliffs--;
@@ -289,8 +190,7 @@ public class RTPAxon {
             cliffs++;
         }
 
-        // Update total rotation with wraparound correction
-        totalRotation = currentAngle - homeAngle + cliffs * 360;
+        totalRotation = currentAngle - homeAngle + cliffs * 360.0;
         previousAngle = currentAngle;
 
         if (!rtp) return;
@@ -298,132 +198,141 @@ public class RTPAxon {
         double dt = pidTimer.seconds();
         pidTimer.reset();
 
-        // Ignore unreasonable dt values
-        if (dt < 0.001 || dt > 1.0) {
+        if (dt <= 0.0001 || dt > 1.0) {
             return;
         }
 
         double error = targetRotation - totalRotation;
 
-        // PID integral calculation with clamping
         integralSum += error * dt;
         integralSum = Math.max(-maxIntegralSum, Math.min(maxIntegralSum, integralSum));
 
-        // Integral wind-down in deadzone
         final double INTEGRAL_DEADZONE = 2.0;
         if (Math.abs(error) < INTEGRAL_DEADZONE) {
             integralSum *= 0.95;
         }
 
-        // PID derivative calculation
         double derivative = (error - lastError) / dt;
         lastError = error;
 
-        // PID output calculation
-        double pTerm = kP * error;
-        double iTerm = kI * integralSum;
-        double dTerm = kD * derivative;
+        double output = (kP * error) + (kI * integralSum) + (kD * derivative);
 
-        double output = pTerm + iTerm + dTerm;
-
-        // Deadzone for output
         final double DEADZONE = 0.5;
         if (Math.abs(error) > DEADZONE) {
-            double power = Math.min(maxPower, Math.abs(output)) * Math.signum(output);
-            setPower(power);
+            double clampedPower = Math.min(maxPower, Math.abs(output)) * Math.signum(output);
+            setPower(clampedPower);
         } else {
             setPower(0);
         }
     }
 
-    // Log current state for telemetry/debug
     @SuppressLint("DefaultLocale")
     public String log() {
         return String.format(
-                "Current Volts: %.3f\n" +
-                        "Current Angle: %.2f\n" +
-                        "Total Rotation: %.2f\n" +
-                        "Target Rotation: %.2f\n" +
-                        "Current Power: %.3f\n" +
-                        "PID Values: P=%.3f I=%.3f D=%.3f\n" +
-                        "PID Terms: Error=%.2f Integral=%.2f",
-                servoEncoder.getCurrentPosition(),
-                getCurrentAngle(),
-                totalRotation,
-                targetRotation,
-                power,
-                kP, kI, kD,
-                targetRotation - totalRotation,
-                integralSum
+                "Current Angle: %.2f | Total: %.2f | Target: %.2f | Power: %.3f | Err: %.2f",
+                getCurrentAngle(), totalRotation, targetRotation, power, getError()
         );
     }
 
-    // TeleOp test class for manual tuning and testing
-    @TeleOp(name = "Cont. Rotation Axon REV Test", group = "test")
+    @com.bylazar.configurables.annotations.Configurable
+    @TeleOp(name = "AAAA Dual Turret Master-Follower PID Tuner", group = "test")
     public static class CRAxonTestRev extends LinearOpMode {
 
-        @Override
-        public void runOpMode() throws InterruptedException {
-//            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-//            panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
-            panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+        // 支持在 Panels 网页端 Configurables 面板实时修改
+        public static double kP = 0.010;
+        public static double kI = 0.0000;
+        public static double kD = 0.00044;
+        public static double maxPower = 0.5;
+        public static double targetDeg = 0.0;
+        public static boolean reverseFollower = false; // 网页端一键切换副舵机正反转
 
-            CRServo crservo = hardwareMap.crservo.get("rightHorizSlide");
-            DcMotorEx encoder = hardwareMap.get(DcMotorEx.class, "rightHorizSlideEncoder");
-            GamepadPair gamepads = new GamepadPair(gamepad1, gamepad2);
-            RTPAxon servo = new RTPAxon(crservo, encoder);
+        private double lastKP = kP, lastKI = kI, lastKD = kD, lastTargetDeg = targetDeg;
+
+        @Override
+        public void runOpMode() {
+            TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+
+            CRServo masterServo = hardwareMap.get(CRServo.class, "servoTurretArmL");
+            CRServo followerServo = hardwareMap.get(CRServo.class, "servoTurretArmR");
+            DcMotorEx encoder = hardwareMap.get(DcMotorEx.class, "RBMotor");
+
+            // 仅创建主 PID 控制器
+            RTPAxon masterAxon = new RTPAxon(masterServo, encoder);
+            masterAxon.setMaxPower(maxPower);
+            masterAxon.setPidCoeffs(kP, kI, kD);
+
+            panelsTelemetry.debug("Status", "Master-Follower Tuner Ready");
+            panelsTelemetry.update(telemetry);
 
             waitForStart();
 
-            while (!isStopRequested()) {
-                gamepads.copyStates();
-                servo.update();
+            while (opModeIsActive()) {
+                // 1. 实时同步网页端修改的 PID 参数
+                if (kP != lastKP || kI != lastKI || kD != lastKD) {
+                    masterAxon.setPidCoeffs(kP, kI, kD);
+                    lastKP = kP;
+                    lastKI = kI;
+                    lastKD = kD;
+                }
+                masterAxon.setMaxPower(maxPower);
 
-                // Manual controls for target and PID tuning
-                if (gamepads.isPressed(-1, "dpad_up")) {
-                    servo.changeTargetRotation(15);
-                }
-                if (gamepads.isPressed(-1, "dpad_down")) {
-                    servo.changeTargetRotation(-15);
-                }
-                if (gamepads.isPressed(-1, "cross")) {
-                    servo.setTargetRotation(0);
-                }
-
-                if (gamepads.isPressed(-1, "triangle")) {
-                    servo.setKP(servo.getKP() + 0.001);
-                }
-                if (gamepads.isPressed(-1, "square")) {
-                    servo.setKP(Math.max(0, servo.getKP() - 0.001));
-                }
-
-                if (gamepads.isPressed(-1, "right_bumper")) {
-                    servo.setKI(servo.getKI() + 0.0001);
-                }
-                if (gamepads.isPressed(-1, "left_bumper")) {
-                    servo.setKI(Math.max(0, servo.getKI() - 0.0001));
+                // 2. 手柄快捷阶跃测试
+                if (gamepad1.dpadUpWasPressed()) targetDeg += 15.0;
+                else if (gamepad1.dpadDownWasPressed()) targetDeg -= 15.0;
+                else if (gamepad1.dpadRightWasPressed()) targetDeg = 45.0;
+                else if (gamepad1.dpadLeftWasPressed()) targetDeg = -45.0;
+                else if (gamepad1.aWasPressed()) targetDeg = 0.0;
+                else if (gamepad1.bWasPressed()) {
+                    masterAxon.forceResetTotalRotation();
+                    targetDeg = 0.0;
                 }
 
-                if (gamepads.isPressed(-1, "touchpad")) {
-                    servo.setKP(0.015);
-                    servo.setKI(0.0005);
-                    servo.setKD(0.0025);
-                    servo.resetPID();
+                targetDeg = Math.max(-90.0, Math.min(90.0, targetDeg));
+
+                if (targetDeg != lastTargetDeg) {
+                    masterAxon.setTargetRotation(targetDeg);
+                    lastTargetDeg = targetDeg;
                 }
 
-                telemetry.addData("Starting angle", servo.STARTPOS);
-                telemetry.addLine(servo.log());
-                telemetry.addData("NTRY", servo.ntry);
-                telemetry.update();
+                // 3. 主控制器计算 + 副舵机纯功率跟随
+                masterAxon.update();
+                double followerPower = masterAxon.getPower() * (reverseFollower ? -1.0 : 1.0);
+                followerServo.setPower(followerPower);
 
-                // 如果想让数据同时显示在 Panels 网页端，用 debug：
-                panelsTelemetry.debug("状态", "运行中");
+                // 4. Panels 实时图表与数据输出
+                panelsTelemetry.debug("Turret Target (deg)", targetDeg);
+                panelsTelemetry.debug("Turret Current (deg)", masterAxon.getTotalRotation());
+                panelsTelemetry.debug("Turret Error (deg)", masterAxon.getError());
+                panelsTelemetry.debug("Master Power", masterAxon.getPower());
 
-// 把原来的 telemetry.update(); 替换成这一行（会自动同时刷新手机端和网页端）：
+                telemetry.addData("Target / Current", "%.1f° / %.1f° (Err: %.1f°)",
+                        targetDeg, masterAxon.getTotalRotation(), masterAxon.getError());
+                telemetry.addData("PID", "P=%.4f | I=%.5f | D=%.5f", kP, kI, kD);
                 panelsTelemetry.update(telemetry);
-
-
             }
         }
     }
+
+
+//    @TeleOp(name = "Cont. Rotation Axon REV Test", group = "test")
+//    public static class CRAxonTestRev extends LinearOpMode {
+//        @Override
+//        public void runOpMode() {
+//            TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+//            CRServo crservo = hardwareMap.crservo.get("servoTurretArmL");
+//            DcMotorEx encoder = hardwareMap.get(DcMotorEx.class, "RBMotor");
+//            RTPAxon servo = new RTPAxon(crservo, encoder);
+//
+//            waitForStart();
+//            while (opModeIsActive()) {
+//                servo.update();
+//                if (gamepad1.dpadUpWasPressed()) servo.changeTargetRotation(15);
+//                if (gamepad1.dpadDownWasPressed()) servo.changeTargetRotation(-15);
+//                if (gamepad1.aWasPressed()) servo.setTargetRotation(0);
+//
+//                panelsTelemetry.debug("Axon Log", servo.log());
+//                panelsTelemetry.update(telemetry);
+//            }
+//        }
+//    }
 }

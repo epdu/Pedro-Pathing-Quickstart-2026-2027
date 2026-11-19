@@ -31,7 +31,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
 
 @Configurable  // 添加这个注解，让 Dashboard 可以调整参数
-@TeleOp(name = "AAA RED Dec5th V1 11132026")
+@TeleOp(name = "AAAAAA RED Dec5th V1 11132026")
 // working on turret testing
 //Y shooter idle of 0.6 target speed 03122026
 //From LEGION
@@ -185,8 +185,8 @@ public class TeleOpDec5th extends LinearOpMode {
 ///////////////////////////////////////////////
 
 //////////////////////////////////////////////Alliance changing here
-        robot.alliance = Alliance.BLUE;
-//        robot.alliance = Alliance.RED;
+//        robot.alliance = Alliance.BLUE;
+        robot.alliance = Alliance.RED;
 //        follower = Constants.createFollower(hardwareMap);
 //        PinpointConstants localizerConstants = new PinpointConstants();
 //        pinpointLocalizer = new PinpointLocalizer(hardwareMap,localizerConstants);
@@ -337,6 +337,8 @@ public class TeleOpDec5th extends LinearOpMode {
     ///
     ///
     ///
+    ///
+    ///
     private void updateHiveStatus() {
         if (robot.myAprilTagProcessor == null) return;
 
@@ -345,34 +347,100 @@ public class TeleOpDec5th extends LinearOpMode {
         robot.hiveRoll = 0.0;
         robot.hivePercentFound = 0.0;
 
-        // BIOBUZZ 只有 Cluster，无需处理 Single
-        for (AprilTagDetection d : robot.myAprilTagProcessor.getDetections()) {
-            if (!(d instanceof AprilTagClusterDetection)) continue;
+        java.util.List<AprilTagDetection> detections = robot.myAprilTagProcessor.getDetections();
 
-            AprilTagClusterDetection cluster = (AprilTagClusterDetection) d;
+        // 1. 打印当前一共看到了几个标签（确认运行期间处理器仍在工作）
+        telemetry.addData("Raw Tags Detected", detections.size());
+        if (panelsTelemetry != null) {
+            panelsTelemetry.debug("Raw Tags Detected", detections.size());
+        }
 
-            // 条件 1：联盟匹配（name 以 R 或 B 开头）
-            String name = cluster.metadata.name;   // Cluster 保证非 null
-            boolean allianceMatch = name.startsWith(
-                    robot.alliance == Alliance.RED ? "R" : "B");
-            if (!allianceMatch) continue;
+        for (AprilTagDetection d : detections) {
+            double rawRoll = (d.ftcPose != null) ? d.ftcPose.roll : 0.0;
 
-            // 条件 2：roll 绝对值 < 90° → CELL 正立可得分
-            double roll = cluster.ftcPose.roll;
-            boolean upright = Math.abs(roll) < 90.0;
-            if (!upright) continue;
+            // 情况 A：识别到的是 Cluster（标签簇）
+            if (d instanceof AprilTagClusterDetection) {
+                AprilTagClusterDetection cluster = (AprilTagClusterDetection) d;
+                String name = (cluster.metadata != null && cluster.metadata.name != null)
+                        ? cluster.metadata.name : "Unknown_Cluster";
 
-            // 辅助条件：标签可见率（可选，但建议）
-            if (cluster.percentClusterFound < 0.5) continue;
+                telemetry.addData("First Tag Raw", "%s (Cluster, Roll:%.1f)", name, rawRoll);
+                if (panelsTelemetry != null) {
+                    panelsTelemetry.debug("First Tag Raw Name", name);
+                    panelsTelemetry.debug("First Tag Raw Roll", rawRoll);
+                }
 
-            // ✅ 命中一个可得分 CELL
-            robot.hiveScorable    = true;
-            robot.hiveClusterName = name;
-            robot.hiveRoll        = roll;
-            robot.hivePercentFound = cluster.percentClusterFound;
-            break;   // 找到第一个即可，或可继续统计多个
+                boolean allianceMatch = name.startsWith(robot.alliance == Alliance.RED ? "R" : "B");
+                if (!allianceMatch) continue;
+                if (Math.abs(rawRoll) >= 90.0) continue;
+                if (cluster.percentClusterFound < 0.5) continue;
+
+                robot.hiveScorable = true;
+                robot.hiveClusterName = name;
+                robot.hiveRoll = rawRoll;
+                robot.hivePercentFound = cluster.percentClusterFound;
+                break;
+            }
+            // 情况 B：识别到的是单个 AprilTag（Single Detection）
+            else if (d instanceof org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection) {
+                org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection single =
+                        (org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection) d;
+                String name = (single.metadata != null && single.metadata.name != null)
+                        ? single.metadata.name : ("ID_" + single.id);
+
+                telemetry.addData("First Tag Raw", "%s (Single ID:%d, Roll:%.1f)", name, single.id, rawRoll);
+                if (panelsTelemetry != null) {
+                    panelsTelemetry.debug("First Tag Raw Name", name);
+                    panelsTelemetry.debug("First Tag Raw Roll", rawRoll);
+                }
+
+                robot.hiveScorable = true;
+                robot.hiveClusterName = name;
+                robot.hiveRoll = rawRoll;
+                robot.hivePercentFound = 1.0;
+                break;
+            }
         }
     }
+
+
+
+//    private void updateHiveStatus() {
+//        if (robot.myAprilTagProcessor == null) return;
+//
+//        robot.hiveScorable = false;
+//        robot.hiveClusterName = "";
+//        robot.hiveRoll = 0.0;
+//        robot.hivePercentFound = 0.0;
+//
+//        // BIOBUZZ 只有 Cluster，无需处理 Single
+//        for (AprilTagDetection d : robot.myAprilTagProcessor.getDetections()) {
+//            if (!(d instanceof AprilTagClusterDetection)) continue;
+//
+//            AprilTagClusterDetection cluster = (AprilTagClusterDetection) d;
+//
+//            // 条件 1：联盟匹配（name 以 R 或 B 开头）
+//            String name = cluster.metadata.name;   // Cluster 保证非 null
+//            boolean allianceMatch = name.startsWith(
+//                    robot.alliance == Alliance.RED ? "R" : "B");
+//            if (!allianceMatch) continue;
+//
+//            // 条件 2：roll 绝对值 < 90° → CELL 正立可得分
+//            double roll = cluster.ftcPose.roll;
+//            boolean upright = Math.abs(roll) < 90.0;
+//            if (!upright) continue;
+//
+//            // 辅助条件：标签可见率（可选，但建议）
+//            if (cluster.percentClusterFound < 0.5) continue;
+//
+//            // ✅ 命中一个可得分 CELL
+//            robot.hiveScorable    = true;
+//            robot.hiveClusterName = name;
+//            robot.hiveRoll        = roll;
+//            robot.hivePercentFound = cluster.percentClusterFound;
+//            break;   // 找到第一个即可，或可继续统计多个
+//        }
+//    }
 
 
 
