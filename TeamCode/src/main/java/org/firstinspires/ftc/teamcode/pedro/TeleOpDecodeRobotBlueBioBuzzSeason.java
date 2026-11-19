@@ -45,7 +45,9 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
     public static double HEADING_DEADBAND_DEG = 1.0;        // 航向死区（1° 以内不修正）
     public static double SETTLE_SPEED_DEG_PER_S = 30.0;     // 松开摇杆后等待角速度降到此值以下再锁定航向
     public static double STICK_DEADBAND = 0.01;             // 旋转摇杆死区
-
+//    private double holdHeading = 0.0;                   // 当前锁定的目标航向（弧度）
+//    private boolean holdHeadingSet = false;             // 是否已锁定有效航向
+//    private boolean turnedSinceHold = false;            // 标记操作手刚刚转动过底盘
     public float DriveTrains_ReducePOWER = 1.0f;
     public float DriveTrains_smoothTurn = 1.0f;
     public float intakePowerShoot = 0.90f;
@@ -73,6 +75,34 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
         public static double targetSPEEDfar = Far_SHOOTER_TARGET_Velocity;
         public static double flyWheelIdleSpeedfar = Far_SHOOTER_TARGET_Velocity * 0.6;
     }
+
+    // =========================================================================
+// 基于距离的自动仰角 (Hood) 与飞轮转速线性插值表（单位：英寸）
+// 调试方法：在场地上选取 4-5 个不同距离点，试出最佳 (Hood位置, 飞轮速度) 后填入下方数组（必须按距离从小到大排列）
+// =========================================================================
+    public static boolean AUTO_RANGE_SHOOT_ENABLED = true; // true = 根据距离自动调节转速与仰角；false = 手动档位
+    public static double SHOOTER_VELO_TRIM = 0.0;          // 现场全局转速微调补偿（例如电池电压低时在 Panels 里填 +40）
+    public static double HOOD_POS_TRIM = 0.0;              // 现场全局仰角微调补偿（例如射偏高时填 -0.02）
+
+    // 标定距离点（英寸）：从近到远严格递增
+    private static final double[] DIST_TABLE_IN = { 35.0,  60.0,  85.0,  110.0, 140.0 };
+    /*
+    *
+三、 现场快速标定方法
+1. 把机器人停在距离目标 35"、60"、85"、110"、140" 的 5 个标记点上（看 Panels 上的 Goal Distance (in) 读数即可精确定位）。
+2. 在每个距离点上，先通过 Gamepad2 手动试出最准的 Hood 位置和飞轮转速。
+3. 把这 5 组实测数值填入 DIST_TABLE_IN、HOOD_TABLE 和 VELO_TABLE 数组中，之后在全场任何角度和距离移动，只要按住右扳机，机器人就会自动完成炮台水平追踪 + 仰角俯仰调节 + 飞轮无级变速。
+    *
+    * */
+    // 对应的 Hood 仰角舵机位置（0.0 ~ 1.0）
+    private static final double[] HOOD_TABLE    = { 0.35,  0.42,  0.48,  0.53,  0.58  };
+    // 对应的飞轮目标速度（Encoder Ticks/s）
+    private static final double[] VELO_TABLE    = { 950.0, 1050.0, 1180.0, 1320.0, 1450.0 };
+
+    // 实时计算出的目标距离、推荐转速与推荐仰角缓存
+    private double currentGoalDistanceIn = 0.0;
+    private double dynamicTargetVelo = 1050.0;
+    private double dynamicTargetHood = 0.50;
 
     private final HardwareDecodeRobotBlueBioBuzzSeason robot = new HardwareDecodeRobotBlueBioBuzzSeason();
     private final Gamepad currentGamepad1 = new Gamepad();
@@ -103,7 +133,10 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
     private double turretOverLimitDeg = 0.0;
     private double turretManualTrimDeg = 0.0;
     private double turretTargetDeg = 0.0;
+    // 炮台目标角度变化率平滑限速参数（度/秒，支持在 Panels 网页端实时调整；设为 0 则关闭限速）
     private double smoothedTurretTargetDeg = 0.0;
+
+
 
     // 航向锁定状态变量
     private double holdHeading = 0.0;
@@ -252,6 +285,12 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
         double dx = targetX - pivotX;
         double dy = targetY - pivotY;
         double rangeSq = dx * dx + dy * dy;
+        // 计算炮台转轴到目标的实时直线距离（英寸）
+        currentGoalDistanceIn = Math.sqrt(rangeSq);
+        // 根据距离查表计算推荐仰角与飞轮速度，并叠加上网页端微调补偿
+        dynamicTargetHood = interpolateTable(DIST_TABLE_IN, HOOD_TABLE, currentGoalDistanceIn) + HOOD_POS_TRIM;
+        dynamicTargetVelo = interpolateTable(DIST_TABLE_IN, VELO_TABLE, currentGoalDistanceIn) + SHOOTER_VELO_TRIM;
+
 // 5. 禁区判断（合并：Y 轴禁区带 OR 距离目标小于 12 英寸防抖死区）
         boolean inYBand = (p.y() >= TURRET_DISABLE_Y_MIN && p.y() <= TURRET_DISABLE_Y_MAX);
         boolean tooClose = (TURRET_DEADZONE_RADIUS_IN > 0)
@@ -303,12 +342,17 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
 // 7. 目标角度变化率平滑限速（防止大角度阶跃瞬间猛甩打齿）
         double dt = turretRateTimer.seconds();
         turretRateTimer.reset();
+
+        // 目标角度变化率平滑限速：限制每帧目标角度的最大步进量
         if (TURRET_MAX_SPEED_DEG_PER_S > 0 && dt > 0.0 && dt < 0.5) {
             double maxStep = TURRET_MAX_SPEED_DEG_PER_S * dt;
-            smoothedTurretTargetDeg += Range.clip(turretTargetDeg - smoothedTurretTargetDeg, -maxStep, maxStep);
+            double delta = Range.clip(turretTargetDeg - smoothedTurretTargetDeg, -maxStep, maxStep);
+            smoothedTurretTargetDeg += delta;
         } else {
             smoothedTurretTargetDeg = turretTargetDeg;
         }
+
+
 // 8. 下发平滑后的目标角度给主 Axon 连续旋转舵机
         robot.axonTurretArmL.trackTargetRotation(smoothedTurretTargetDeg);
 // 9. 纯数字遥测输出（Panels Graph 可直接画图）
@@ -477,14 +521,35 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
         robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.flyWheelIdleSpeedfar));
         robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.flyWheelIdleSpeedfar));
     }
+
     private void startShooter() {
         robot.IntakeMotorL.setPower(0);
         robot.IntakeMotorR.setPower(0);
-        robot.setHoodPosition(0.5);
-        robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
-        robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
+
+        if (AUTO_RANGE_SHOOT_ENABLED) {
+            // 全自动距离变焦模式：同时设置对应的 Hood 仰角和飞轮目标转速
+            robot.setHoodPosition(dynamicTargetHood);
+            robot.shooterL.setVelocity(Math.abs(dynamicTargetVelo));
+            robot.shooterR.setVelocity(Math.abs(dynamicTargetVelo));
+        } else {
+            // 手动近射固定模式
+            robot.setHoodPosition(0.50);
+            robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
+            robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
+        }
         shooterIsOn = true;
     }
+
+
+
+    //    private void startShooter() {
+//        robot.IntakeMotorL.setPower(0);
+//        robot.IntakeMotorR.setPower(0);
+//        robot.setHoodPosition(0.5);
+//        robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
+//        robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEED));
+//        shooterIsOn = true;
+//    }
     private void startShooterFar() {
         robot.IntakeMotorL.setPower(0);
         robot.IntakeMotorR.setPower(0);
@@ -513,8 +578,21 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
         fireRequested = false;
         shooterIsOn = false;
     }
+//    private void checkShooterVelocity() {
+//        double activeTarget = isFarMode ? ShooterPIDFConfig.targetSPEEDfar : ShooterPIDFConfig.targetSPEED;
+//        if (Math.abs(cachedShooterVeloL - activeTarget) <= toleranceforShoot) {
+//            isShooterAtSpeed = true;
+//        } else {
+//            isShooterAtSpeed = false;
+//            fireRequested = false;
+//        }
+//    }
+
     private void checkShooterVelocity() {
-        double activeTarget = isFarMode ? ShooterPIDFConfig.targetSPEEDfar : ShooterPIDFConfig.targetSPEED;
+        double activeTarget = AUTO_RANGE_SHOOT_ENABLED
+                ? dynamicTargetVelo
+                : (isFarMode ? ShooterPIDFConfig.targetSPEEDfar : ShooterPIDFConfig.targetSPEED);
+
         if (Math.abs(cachedShooterVeloL - activeTarget) <= toleranceforShoot) {
             isShooterAtSpeed = true;
         } else {
@@ -522,15 +600,42 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
             fireRequested = false;
         }
     }
+
+
     private void updateHood() {
-        if (currentGamepad2.dpad_down && !previousGamepad2.dpad_down) {
-            robot.setHoodPosition(HoodArmfarposition);
-        } else if (currentGamepad2.dpad_up && !previousGamepad2.dpad_up) {
-            robot.setHoodPosition(HoodArmcloseposition);
-        } else if (currentGamepad2.y && !previousGamepad2.y) {
-            robot.setHoodPosition(0.50);
+        // 1. 按 Gamepad2 Start 键一键切换“全自动距离变焦”与“手动调节”模式
+        if (currentGamepad2.start && !previousGamepad2.start) {
+            AUTO_RANGE_SHOOT_ENABLED = !AUTO_RANGE_SHOOT_ENABLED;
+        }
+
+        // 2. 开启自动距离模式且飞轮正在运转时，实时跟随距离连续微调仰角舵机与飞轮转速
+        if (AUTO_RANGE_SHOOT_ENABLED && shooterIsOn) {
+            robot.setHoodPosition(dynamicTargetHood);
+            double targetV = isFarMode ? ShooterPIDFConfig.targetSPEEDfar : dynamicTargetVelo;
+            robot.shooterL.setVelocity(Math.abs(targetV));
+            robot.shooterR.setVelocity(Math.abs(targetV));
+        } else if (!AUTO_RANGE_SHOOT_ENABLED) {
+            // 手动应急调节
+            if (currentGamepad2.dpad_down && !previousGamepad2.dpad_down) {
+                robot.setHoodPosition(HoodArmfarposition);
+            } else if (currentGamepad2.dpad_up && !previousGamepad2.dpad_up) {
+                robot.setHoodPosition(HoodArmcloseposition);
+            } else if (currentGamepad2.y && !previousGamepad2.y) {
+                robot.setHoodPosition(0.50);
+            }
         }
     }
+
+
+//    private void updateHood() {
+//        if (currentGamepad2.dpad_down && !previousGamepad2.dpad_down) {
+//            robot.setHoodPosition(HoodArmfarposition);
+//        } else if (currentGamepad2.dpad_up && !previousGamepad2.dpad_up) {
+//            robot.setHoodPosition(HoodArmcloseposition);
+//        } else if (currentGamepad2.y && !previousGamepad2.y) {
+//            robot.setHoodPosition(0.50);
+//        }
+//    }
     private void updateBlockage() {
         if (currentGamepad1.dpad_left && !previousGamepad1.dpad_left) {
             robot.BlockageArmL.setPosition(blockageblockposition);
@@ -592,16 +697,38 @@ public class TeleOpDecodeRobotBlueBioBuzzSeason extends LinearOpMode {
                 break;
             }
         }
+    }    /**
+     * 安全一维线性插值函数（自带首尾边界限幅，永不越界报错）
+     */
+    private double interpolateTable(double[] xTable, double[] yTable, double x) {
+        int n = xTable.length;
+        if (x <= xTable[0]) return yTable[0];
+        if (x >= xTable[n - 1]) return yTable[n - 1];
+
+        for (int i = 0; i < n - 1; i++) {
+            if (x >= xTable[i] && x <= xTable[i + 1]) {
+                double ratio = (x - xTable[i]) / (xTable[i + 1] - xTable[i]);
+                return yTable[i] + ratio * (yTable[i + 1] - yTable[i]);
+            }
+        }
+        return yTable[n - 1];
     }
+
+
     private void updateAllTelemetry(double loopTimeMs) {
         Pose pose = follower.pose();
         double activeTarget = isFarMode ? ShooterPIDFConfig.targetSPEEDfar : ShooterPIDFConfig.targetSPEED;
-// 纯数字序列（可直接用于 Panels Graph 折线图）
+
+        // 纯数字序列（可直接用于 Panels Graph 折线图）
         telemetry.addData("Loop Time (ms)", loopTimeMs);
         telemetry.addData("Shooter Target", activeTarget);
         telemetry.addData("Shooter Left Velo", cachedShooterVeloL);
         telemetry.addData("Shooter Right Velo", cachedShooterVeloR);
         telemetry.addData("Hive Scorable", robot.hiveScorable ? 1 : 0);
+        telemetry.addData("Goal Distance (in)", currentGoalDistanceIn);
+        telemetry.addData("Dynamic Velo Target", dynamicTargetVelo);
+        telemetry.addData("Dynamic Hood Target", dynamicTargetHood);
+
 // 状态摘要文字
         telemetry.addData("Shoot Mode", isFarMode ? "FAR" : "NEAR");
         telemetry.addData("Pose (X/Y/H)", "%.1f / %.1f / %.1f°", pose.x(), pose.y(), Math.toDegrees(pose.heading()));
