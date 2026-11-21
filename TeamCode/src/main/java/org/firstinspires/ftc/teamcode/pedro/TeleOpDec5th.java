@@ -1,17 +1,11 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
-import android.util.Size;
-
-//import com.acmerobotics.dashboard.FtcDashboard;
-//import com.acmerobotics.dashboard.config.Config;
-//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
-import com.pedropathing.api.PoseFactory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -19,14 +13,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagClusterDetection;
 
@@ -46,7 +34,7 @@ public class TeleOpDec5th extends LinearOpMode {
     Gamepad previousGamepad2 = new Gamepad();
     private boolean intakeToggle=false;
     private boolean shooterToggle=false;
-//    HardwareQualifier robot = new HardwareQualifier();
+    //    HardwareQualifier robot = new HardwareQualifier();
 //    HardwareQualifier robot = new HardwareQualifier();
     HardwareDec5th robot = new HardwareDec5th();
 //    TelemetryData telemetryData = new TelemetryData(new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry()));
@@ -77,7 +65,7 @@ public class TeleOpDec5th extends LinearOpMode {
     public float  transferPowerDuringDumping=-0.85f;
     public float  transferPowerPowerOff=0.0f;
     public float  ShooterMotorShoot=0.95f;
-//    public float  ShooterMotorShootMed=-0.8f;
+    //    public float  ShooterMotorShootMed=-0.8f;
 //    public float  ShooterMotorShootClose=-0.8f;
     public float  ShooterMotorHold=-0.2f;
     public float  ShooterMotorClean=-0.8f;
@@ -109,10 +97,7 @@ public class TeleOpDec5th extends LinearOpMode {
     private Pose  currentPose;
     private Methods methods;
     private RTPAxon.Direction direction;
-//    private final Gamepad gamepad1;
-//    public static final double GEAR_RATIO = .5;
-//    private DriveSubsystem driveSubsystem;
-//    private static TurretSubsystem instance;
+
     /// ////////////////////////////////////////////////////////////////
     public static final double HoodArmfarposition=0.3;
     public static final double HoodArmcloseposition=0.35;
@@ -142,9 +127,6 @@ public class TeleOpDec5th extends LinearOpMode {
     private static final double Close_SHOOTER_TARGET_RPM = 800;//  400RPM---2,557.33333333333333
     private static final double Far_SHOOTER_TARGET_RPM = 2237;  //  350RPM---2237
     public static double toleranceforShoot = 40;        // 转速容差
-    //  private static final double Med_SHOOTER_TARGET_RPM = 1300;   //1598 white tri a little bit too far//  250RPM---1586.67
-    //    private static final double Med_SHOOTER_TARGET_RPM = 1300;   //1598 white tri a little bit too far//  250RPM---1586.67
-    // use rpm as speed, the real name should be speed = 1300      //1300
 
     private ElapsedTime imuResetTimer = new ElapsedTime();
     private boolean imuResetInCooldown = false;
@@ -187,26 +169,13 @@ public class TeleOpDec5th extends LinearOpMode {
 //////////////////////////////////////////////Alliance changing here
 //        robot.alliance = Alliance.BLUE;
         robot.alliance = Alliance.RED;
-//        follower = Constants.createFollower(hardwareMap);
-//        PinpointConstants localizerConstants = new PinpointConstants();
-//        pinpointLocalizer = new PinpointLocalizer(hardwareMap,localizerConstants);
+
         robot.leftFrontMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.rightFrontMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.leftRearMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.rightRearMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        Constants.driveConstants.setUseBrakeModeInTeleOp(true);
-//        follower = Constants.createFollower(hardwareMap);
-//        Pose startPose = new Pose(70, 70, 0);  // 或其他起始坐标
-//        Pose startPose = new Pose(112, 92.25, 0);//Red near
-//        Pose startPose = new Pose(104, 12.25, 0);//Red far
+
         Pose startPose = new Pose(32, 92.25, 0);//Blue near
-//        Pose startPose = new Pose(40, 12.25, 0);//Blue far
-
-        //auto off line near 112, 92.25  far 104, 12.25,//near oor far
-
-//        follower.setStartingPose(startPose == null ? new Pose() : startPose);
-//        follower.update();
-//        pinpointLocalizer.update();
 
         pidfController = new PIDFController(
                 TurretConstants.kP,
@@ -215,24 +184,6 @@ public class TeleOpDec5th extends LinearOpMode {
                 TurretConstants.kF
         );
 
-//        if (gamepad1.dpad_right) {
-//            solverrobot.turret.setTurret(Turret.TurretState.GOAL_LOCK_CONTROL, 0);
-//        } else if(gamepad1.dpad_left){
-//            solverrobot.turret.setTurret(Turret.TurretState.OFF, 0);
-//        }
-//        robot.axonTurretArmL.setTargetRotation(0);
-//        robot.axonTurretArmL.setMaxPower(0.5);
-//        robot.axonTurretArmL.setPidCoeffs(0.000002, 0.0000, 0.000);
-//        robot.axonTurretArmL.setTargetRotation(0);
-//        robot.axonTurretArmL.setMaxPower(0.5);  // Limit max power to 50%
-//        robot.axonTurretArmR.setMaxPower(0.5);  // Limit max power to 50%
-//        robot.axonTurretArmR.setPidCoeffs(0.02, 0.0005, 0.0025);
-
-//        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-//        FtcDashboard Dashboard = FtcDashboard.getInstance();
-//        Telemetry dashboardTelemetry = Dashboard.getTelemetry();
-//        // 设置 Dashboard 更新频率
-//        Dashboard.setTelemetryTransmissionInterval(100); // 100ms 更新一次
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         waitForStart();
@@ -255,20 +206,7 @@ public class TeleOpDec5th extends LinearOpMode {
             previousGamepad2.copy(currentGamepad2);
             currentGamepad1.copy(gamepad1);
             currentGamepad2.copy(gamepad2);
-//            // Store the gamepad values from the previous loop iteration in
-//            // previousGamepad1/2 to be used in this loop iteration.
-//            // This is equivalent to doing this at the end of the previous
-//            // loop iteration, as it will run in the same order except for
-//            // the first/last iteration of the loop.
-//            previousGamepad1.copy(currentGamepad1);
-//            previousGamepad2.copy(currentGamepad2);
-//
-//            // Store the gamepad values from this loop iteration in
-//            // currentGamepad1/2 to be used for the entirety of this loop iteration.
-//            // This prevents the gamepad values from changing between being
-//            // used and stored in previousGamepad1/2.
-//            currentGamepad1.copy(gamepad1);
-//            currentGamepad2.copy(gamepad2);
+
             // 1. 底盘与车体控制（每帧只调用一次！）
             updateDrivetrain_FieldCentric();
             handleIMUReset();
@@ -292,39 +230,9 @@ public class TeleOpDec5th extends LinearOpMode {
             panelsTelemetry.update(telemetry);
 
 
-
-//            telemetry.addData("Hive Scorable", robot.hiveScorable);
-//            telemetry.addData("Hive Cluster",  robot.hiveClusterName);
-//            telemetry.addData("Hive Roll",     "%.1f°", robot.hiveRoll);
-//            telemetry.addData("Hive Visibility","%.0f%%", robot.hivePercentFound * 100);
 //
 //            /////////////////////////////////
-////            if (gamepad1.xWasPressed()){
-////                methods.manualRelocalize(follower);
-////            }
-////            if (gamepad2.dpad_up){
-////                robot.HoodArmL.setPosition(0.48);
-////                robot.HoodArmR.setPosition(0.48);
-////            }
-////            if (gamepad2.dpad_down){
-////                robot.HoodArmL.setPosition(0.52);
-////                robot.HoodArmR.setPosition(0.52);
-////            }
-////            if (gamepad2.y){
-////                robot.HoodArmL.setPosition(0.5);
-////                robot.HoodArmR.setPosition(0.5);
-////            }
-//            /// ////////////////////////////
-////            rightTriggerHandler.update(gamepad1.right_trigger);
-////            handlePositionReset();
-////            turretAngle = getPosition();
-////            turretupdate();
-//            /// ///////angle need these， not power
-////            robot.axonTurretArmL.update();
-////            robot.axonTurretArmR.update();
-//            telemetry.update();
-////            sleep(20);
-//            panelsTelemetry.update(telemetry);
+
 
         } //end of while loop
 
@@ -405,44 +313,6 @@ public class TeleOpDec5th extends LinearOpMode {
 
 
 
-//    private void updateHiveStatus() {
-//        if (robot.myAprilTagProcessor == null) return;
-//
-//        robot.hiveScorable = false;
-//        robot.hiveClusterName = "";
-//        robot.hiveRoll = 0.0;
-//        robot.hivePercentFound = 0.0;
-//
-//        // BIOBUZZ 只有 Cluster，无需处理 Single
-//        for (AprilTagDetection d : robot.myAprilTagProcessor.getDetections()) {
-//            if (!(d instanceof AprilTagClusterDetection)) continue;
-//
-//            AprilTagClusterDetection cluster = (AprilTagClusterDetection) d;
-//
-//            // 条件 1：联盟匹配（name 以 R 或 B 开头）
-//            String name = cluster.metadata.name;   // Cluster 保证非 null
-//            boolean allianceMatch = name.startsWith(
-//                    robot.alliance == Alliance.RED ? "R" : "B");
-//            if (!allianceMatch) continue;
-//
-//            // 条件 2：roll 绝对值 < 90° → CELL 正立可得分
-//            double roll = cluster.ftcPose.roll;
-//            boolean upright = Math.abs(roll) < 90.0;
-//            if (!upright) continue;
-//
-//            // 辅助条件：标签可见率（可选，但建议）
-//            if (cluster.percentClusterFound < 0.5) continue;
-//
-//            // ✅ 命中一个可得分 CELL
-//            robot.hiveScorable    = true;
-//            robot.hiveClusterName = name;
-//            robot.hiveRoll        = roll;
-//            robot.hivePercentFound = cluster.percentClusterFound;
-//            break;   // 找到第一个即可，或可继续统计多个
-//        }
-//    }
-
-
 
     private void handleIntakeToggle() {
         if (currentGamepad1.left_trigger > 0.3 && !(previousGamepad1.left_trigger > 0.3)) {
@@ -474,23 +344,6 @@ public class TeleOpDec5th extends LinearOpMode {
         }
     }
 
-//    private void handlePositionReset() {
-//        if (gamepad1.back && gamepad1.start) {  // 同时按 back + start 重置
-//            // 重置到默认起始点
-//            follower.setStartingPose(new Pose(70, 70, 0));// base 9,6.25,-180
-//            telemetry.addData("Position Reset", "To default (70,70,0)");
-//            gamepad1.rumble(500);
-//        } else if (gamepad1.back) {  // 只按 back 使用 Auto 保存的位置
-//
-//            follower.setStartingPose(new Pose(
-//                    robot.finalAutoX,
-//                    robot.finalAutoY,
-//                    robot.finalAutoHeading
-//            ));
-//            telemetry.addData("Position Reset", "To Auto end pose");
-//
-//        }
-//    }
 
     private void turretupdate() {
         // 每帧只读取一次编码器位置，避免重复硬件通信
@@ -545,26 +398,7 @@ public class TeleOpDec5th extends LinearOpMode {
         }
     }
 
-//    public void setTurretPosition(double pos) {
-////        turretPower = - pidfController.calculate(getPosition(), pos);
-//        turretPower =  + pidfController.calculate(getPosition(), pos);
-//
-////        robot.servoTurretArmL.setPower(turretPower);
-////        robot.servoTurretArmR.setPower(turretPower);
-//
-//        telemetry.addData("Math.toDegrees(turretSetpoint) ", Math.toDegrees(turretSetpoint));
-//        telemetry.addData("Math.toDegrees(getPosition()) ", Math.toDegrees(getPosition()) );
-//        telemetry.addData("Math.toDegrees(currentPose.heading()) ", Math.toDegrees(currentPose.heading()));
-//
-////        robot.axonTurretArmL.setTargetRotation(Math.toDegrees(pos-getPosition()));
-////        robot.axonTurretArmR.setTargetRotation(Math.toDegrees(pos-getPosition()));
-////        robot.axonTurretArmL.setTargetRotation(45);
-////        robot.axonTurretArmR.setTargetRotation(45);
-////        robot.axonTurretArmL.changeTargetRotation(Math.toDegrees( pos-getPosition()));
-////        robot.axonTurretArmR.changeTargetRotation(Math.toDegrees(pos-getPosition()));
-//
-////        setTurretPower(turretPower);
-//    }
+
     public void setTurretPower(double power) {
         double clampedPower = Math.max(-0.5, Math.min(0.5, power)); // 可以是-1  +1 区间
 
@@ -582,71 +416,7 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
 
-//    public double findPosition() {
-//        double x, y;
-//        double robotHeading;
-//        double overallAngle;
-//
-//        currentPose = follower.getPose();
-//
-//        if (robot.alliance == Alliance.BLUE) {
-//
-//            x = currentPose.getX();
-//            y = 144 - currentPose.getY();
-//
-////            x = follower.getPose().getX();
-////            y = 144 - follower.getPose().getY();
-//            robotHeading = currentPose.getHeading();
-//            overallAngle = Math.PI - Math.atan2(y, x);
-//            telemetry.addData("Alliance.BLUE",Alliance.BLUE);
-//        } else if (robot.alliance == Alliance.RED) {
-//            x = 144 - currentPose.getX();
-//            y = 144 -currentPose.getY();
-//            telemetry.addData("Alliance.RED", Alliance.RED);
-//            robotHeading = currentPose.getHeading();
-//            overallAngle = Math.atan2(y, x);
-//            telemetry.addData("robotHeading", robotHeading);
-//            telemetry.addData("overallAngle", overallAngle);
-//
-//        } else {
-//            return 0.0;
-//        }
-//
-//        double target = overallAngle - robotHeading;
-//        //代替power PIDF 使用 angle PID
-//
-//
-//        if (target < -Math.PI / 2.0 || target > Math.PI / 2.0) {
-//            return 0.0;
-//        }
-//        telemetry.addData("target ", target);
-//        telemetry.addData("tMath.toDegrees(target) ",  Math.toDegrees(target));
-//        telemetry.addData("follower.currentPose.getX()", currentPose.getX());
-//        telemetry.addData("follower.currentPose.getY()", currentPose.getY());
-//        telemetry.addData("follower.currentPose.getHeading()", currentPose.getHeading());
-//        return target;
-//    }
 
-
-//    public double getPosition() {
-//        int ticksPerRev = 8192;
-//        double revolutions = (double) robot.revEncoder.getCurrentPosition() / ticksPerRev;
-//
-//        return -revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO;
-//    }
-
-
-//    public double getPosition() {
-////        if (robot.revEncoder == null) {
-////            telemetry.addData("Warning", "revEncoderForTurret is null in getPosition()");
-////            return 0.0;
-////        }
-//        int ticksPerRev = 8192;//16384
-//        double revolutions = (double) -robot.revEncoder.getCurrentPosition() / ticksPerRev;
-//        telemetry.addData(" -revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO ",  -revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO);
-//        telemetry.addData(" -revolutions angle ",  Math.toDegrees(-revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO));
-//        return - revolutions * 2 * Math.PI * TurretConstants.GEAR_RATIO;
-//    }
 
     public double getPosition() {
         if (robot.revEncoder == null) return 0.0;
@@ -656,17 +426,6 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
 
-//    public double getCurrentAngleOfTurret() {
-//        if (robot.revEncoder == null) {
-//            telemetry.addData("Warning", "revEncoderForTurret is null in getCurrentAngleofTurret()");
-//            return 0.0;
-//        }
-//        return ( robot.revEncoder.getCurrentPosition()/16384) * (direction.equals(RTPAxon.Direction.FORWARD) ? -360 : 360);
-//    }
-//    public void setPosition(double pos) {
-//        turretPower = -pidController.calculate(getPosition(), pos);
-//        setTurretPower(turretPower);
-//    }
     /// //////////////////////////////////////////////////////////////////////////
 
     public void updateIntake() {
@@ -698,60 +457,6 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
 
-//    public void updateIntake() {
-//        // 手柄控制拾取电机
-//        if (gamepad1.left_trigger > 0.1) {
-//            /// ///////////////////////////////////for debug//////////////////////
-//            robot.BlockageArmL.setPosition(blockageblockposition);
-////            robot.BlockageArmR.setPosition(blockageblockposition);
-//
-//            robot.IntakeMotor.setPower(intakePowerIntake);
-//            robot.TransferMotor.setPower(transferPowerDuringIntakeing);
-//            /// ///////////////////////////////////for debug//////////////////////
-////            robot.axonTurretArmL.changeTargetRotation(45);
-////            robot.axonTurretArmR.changeTargetRotation(45);
-////                robot.axonTurretArmL.setTargetRotation(180);// ((96/20)*35/110)
-////
-////                robot.axonTurretArmR.setTargetRotation(180);
-////            robot.axonTurretArmL.setTargetRotation(0);// ((96/20)*35/110)
-////
-////            robot.axonTurretArmR.setTargetRotation(0);
-////            robot.axonTurretArmR.setTargetRotation(90);    // Move to 90 degrees absolute
-////            robot.axonTurretArmR.changeTargetRotation(45); // Move 45 degrees from current position
-//
-////y = 0.45452 -0.00677*H43^1 + -9.37853E-4*H43^2 -4.69942E-5*H43^3 + -1.24595E-6*H43^4 -1.74452E-8*H43^5 + -1.05357E-10*H43^6
-//
-////                robot.HoodArmL.setPosition(0.3);
-////                robot.HoodArmR.setPosition(0.3);
-//            intakeIsOn = true;
-//            delayTimer.reset();
-//            while (delayTimer.milliseconds() < 300 && opModeIsActive()) {
-//                // Other tasks can be processed here
-//            } // 防止快速连击导致模式快速切换
-//
-//            telemetry.addData("shooterIsOn startintake", shooterIsOn);
-//            telemetry.addData("intakeIsOn startintake", intakeIsOn);
-//            telemetry.addData("shooterIsOnSpeend startintake ", shooterIsOnSpeend);
-//
-//
-//
-//        } else if (gamepad1.left_bumper) {
-//            // 反转（吐出）
-//            robot.IntakeMotor.setPower(intakePowerDump);
-//            robot.TransferMotor.setPower(intakePowerDump);
-//
-//            delayTimer.reset();
-//            while (delayTimer.milliseconds() < 300 && opModeIsActive()) {
-//                // Other tasks can be processed here
-//            } // 防止快速连击导致模式快速切换
-//
-//        } else if (gamepad1.y)  {
-//            // 停止
-//            stopIntake();
-//
-//
-//        }
-//    }
 
     public void updateShooter() {
 
@@ -806,7 +511,7 @@ public class TeleOpDec5th extends LinearOpMode {
 
 
     public static class ShooterPIDFConfig {
-//        public static double kP = 300.0;        // 220-300 ni bigger difference 比例增益0.10.350.651.0655
+        //        public static double kP = 300.0;        // 220-300 ni bigger difference 比例增益0.10.350.651.0655
 //        public static double kI = 0.0;        // 积分增益
 //        public static double kD = 0.0;        // 微分增益
 //        public static double kF = 15.0;      // 14 --- 90%-95% of 1200  15.0 1160 15.1 V=1160 low battery
@@ -838,14 +543,6 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
 
-//    public static class ShooterPIDFConfig {
-//        public static double kP = 100;     // 比例增益0.10.350.651.0655
-//        public static double kI = 0.0;      // 积分增益
-//        public static double kD = 0.0;      // 微分增益
-//        public static double kF = 17;      // 前馈增益0.050.08
-//        public static double targetRPM =Med_SHOOTER_TARGET_RPM; // 目标转速
-//        public static double tolerance = 30;
-//    }
 
 
     public void initShooterPIDF() {
@@ -876,18 +573,7 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
     ///  //////////////////////////////////////////////////////////////////////////////////////////
-//    private void startShooterIdlefar() {
-//        robot.IntakeMotorL.setPower(0);
-//        robot.IntakeMotorR.setPower(0);
-//        // robot.axonTurretArmL.setTargetRotation(0);
-//        // robot.axonTurretArmR.setTargetRotation(0);
-//        //  03072026
-//        //  03072026
-//        if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.SlaveShooterMotorR instanceof DcMotorEx) ) {
-//            robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.flyWheelIdleSpeedfar));
-//            robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.flyWheelIdleSpeedfar));
-//        }
-//    }
+
     private void startShooterIdle() {
         robot.IntakeMotor.setPower(0);
         robot.TransferMotor.setPower(0);
@@ -919,30 +605,7 @@ public class TeleOpDec5th extends LinearOpMode {
             telemetry.addData("Shooter status 4", "4");
         }
     }
-//    private void startShooterfar() {
-//        robot.IntakeMotorL.setPower(0);
-//        robot.IntakeMotorR.setPower(0);
-////        robot.axonTurretArmL.setTargetRotation(0);
-////        robot.axonTurretArmR.setTargetRotation(0);
-//        //  03072026
-//        if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.SlaveShooterMotorR instanceof DcMotorEx) ) {
-//            robot.shooterL.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEEDfar));
-//            robot.shooterR.setVelocity(Math.abs(ShooterPIDFConfig.targetSPEEDfar));
-//            shooterIsOn=true; //4
-//            shooterIsOnSpeend=true;
-//            telemetry.addData("Shooter status 4", "4");
-//        }
-//    }
-    /// ///////////////////////////////////////////////////////////////////////////////
-    /// /// ///////////need fix
-//    private void updateHood() {
-//        if (gamepad2.dpad_down) {
-//            robot.HoodArmL.setPosition(HoodArmfarposition);
-//        }  else if(gamepad2.dpad_up) {
-//            robot.HoodArmL.setPosition(HoodArmcloseposition);
-//        } // 防止快速连击导致模式快速切换
-//
-//    }
+
     /// /////////////////need work
     private void updateBlockage() {
         if (gamepad1.dpad_left) {
@@ -959,24 +622,7 @@ public class TeleOpDec5th extends LinearOpMode {
     }
 
 /// ////////////////////////////////////////////////////////////////////////////
-//    private void startShooter() {
-//        robot.IntakeMotorL.setPower(0);
-//        robot.IntakeMotorR.setPower(0);
-//        if (robot.MasterShooterMotorL instanceof DcMotorEx) {
-//            DcMotorEx shooter = (DcMotorEx) robot.MasterShooterMotorL;
-//            // 直接使用setVelocity，它会使用已配置的PIDF
-//            shooter.setVelocity(ShooterPIDFConfig.targetRPM);
-//            // 从电机使用简单功率跟随（可选PIDF）
-    ////            robot.SlaveShooterMotorR.setPower(shooter.getPower() * 0.95); // 95%跟随
-//            double MasterShooterMotorLPower = robot.MasterShooterMotorL.getPower();
-//            robot.SlaveShooterMotorR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            robot.SlaveShooterMotorR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//            double SlaveShooterMotorRPower = calculateOptimalSlavePower(MasterShooterMotorLPower);
-//            robot.SlaveShooterMotorR.setPower(SlaveShooterMotorRPower);
-//            //
-//        }
-//    }
-    //
+
     private void moveTurret() {
         robot.IntakeMotor.setPower(0);
         robot.TransferMotor.setPower(0);
@@ -988,25 +634,7 @@ public class TeleOpDec5th extends LinearOpMode {
 
     }
 /// ////////////////////////////////////////////////////////////////////////////////////
-    /**
-     * 检查射击电机速度（使用 Dashboard 调整的容差）
-     */
-//    private void checkShooterVelocity() {
-//
-//        double currentVelocity = Math.abs(robot.MasterShooterMotorL.getVelocity());
-//        double targetVelocity = ShooterPIDFConfig.targetSPEED;
-////        double targetVelocity = ShooterPIDFConfig.targetSPEED;
-////        double tolerance = ShooterPIDFConfig.tolerance;
-//
-//        // 检查是否在容差范围内
-//        if (Math.abs(Math.abs(currentVelocity) - targetVelocity) <= toleranceforShoot) {
-//            isShooterAtSpeed = true;
-//        } else {
-//            isShooterAtSpeed = false;
-//            fireRequested = false;
-//        }
-//
-//    }
+
 
     private void checkShooterVelocity() {
         double targetVelocity = ShooterPIDFConfig.targetSPEED;
@@ -1019,25 +647,6 @@ public class TeleOpDec5th extends LinearOpMode {
             fireRequested = false;
         }
     }
-
-//    private void checkShooterVelocity() {
-//        if (robot.MasterShooterMotorL.isBusy()) {
-//            double currentVelocity = Math.abs(robot.MasterShooterMotorL.getVelocity());
-//            double targetVelocity = ShooterPIDFConfig.targetRPM;
-//            double tolerance = ShooterPIDFConfig.tolerance;
-//
-//            // 检查是否在容差范围内
-//            if (Math.abs(Math.abs(currentVelocity) - targetVelocity) <= toleranceforShoot) {
-//                isShooterAtSpeed = true;
-//            } else {
-//                isShooterAtSpeed = false;
-//                fireRequested = false;
-//            }
-//        } else {
-//            isShooterAtSpeed = false;
-//        }
-//    }
-
 
 
     /**
@@ -1220,15 +829,15 @@ public class TeleOpDec5th extends LinearOpMode {
 //        robot.SlaveShooterMotorR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 //        robot.SlaveShooterMotorR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 //        startShooterIdle();
-////        if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.MasterShooterMotorL.getVelocity()< ShooterPIDFConfig.targetSPEED)) {
-////            // 直接使用setVelocity，它会使用已配置的PIDF
-////            startShooterIdle();
-////            shooterIsOn=true;//3
-////            telemetry.addData("Shooter status 3", "3");
-////        } else if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.MasterShooterMotorL.getVelocity()> ShooterPIDFConfig.targetSPEED*1.4)) {
-////            // 直接使用setVelocity，它会使用已配置的PIDF
-////            stopShooter();
-////        }
+    ////        if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.MasterShooterMotorL.getVelocity()< ShooterPIDFConfig.targetSPEED)) {
+    ////            // 直接使用setVelocity，它会使用已配置的PIDF
+    ////            startShooterIdle();
+    ////            shooterIsOn=true;//3
+    ////            telemetry.addData("Shooter status 3", "3");
+    ////        } else if ((robot.MasterShooterMotorL instanceof DcMotorEx) && (robot.MasterShooterMotorL.getVelocity()> ShooterPIDFConfig.targetSPEED*1.4)) {
+    ////            // 直接使用setVelocity，它会使用已配置的PIDF
+    ////            stopShooter();
+    ////        }
 //        intakeIsOn=false;
 //        // Non-blocking delay to prevent rapid mode switching
 //        telemetry.addData("intakePowerOff", intakePowerOff);
@@ -1236,22 +845,22 @@ public class TeleOpDec5th extends LinearOpMode {
 //        delayTimer.reset();
 //    }
 
-private void stopIntake() {
-    // 1. 停止吸球和传送带电机
-    robot.IntakeMotor.setPower(intakePowerOff);
-    robot.TransferMotor.setPower(intakePowerOff);
+    private void stopIntake() {
+        // 1. 停止吸球和传送带电机
+        robot.IntakeMotor.setPower(intakePowerOff);
+        robot.TransferMotor.setPower(intakePowerOff);
 
-    // 2. 重置发射状态标志
-    intakeIsOn = false;
-    isShooterAtSpeed = false;
-    fireRequested = false;
+        // 2. 重置发射状态标志
+        intakeIsOn = false;
+        isShooterAtSpeed = false;
+        fireRequested = false;
 
-    // 3. 直接将飞轮切入怠速（无需重置编码器，保证左右轮始终处于 PIDF 闭环且响应零延迟）
-    startShooterIdle();
+        // 3. 直接将飞轮切入怠速（无需重置编码器，保证左右轮始终处于 PIDF 闭环且响应零延迟）
+        startShooterIdle();
 
-    // 4. 仅记录数据，不在此处单独调用 telemetry.update()，交由主循环末尾统一刷新
-    telemetry.addData("Intake Status", "STOPPED (Flywheel Idle)");
-}
+        // 4. 仅记录数据，不在此处单独调用 telemetry.update()，交由主循环末尾统一刷新
+        telemetry.addData("Intake Status", "STOPPED (Flywheel Idle)");
+    }
 
     /// ///////////
 

@@ -23,9 +23,16 @@ public class RTPAxon {
     private double targetRotation;
 
     // PID 参数与状态
-    private double kP = 0.015;
-    private double kI = 0.0005;
-    private double kD = 0.0025;
+//    private double kP = 0.015;
+//    private double kI = 0.0005;
+//    private double kD = 0.0025;
+//    private double kP = 0.015;
+//    private double kI = 0.0005;
+//    private double kD = 0.0025;
+    private double kP = HardwareDecodeRobotBioBuzzSeason.TURRET_KP;
+    private double kI = HardwareDecodeRobotBioBuzzSeason.TURRET_KI;
+    private double kD = HardwareDecodeRobotBioBuzzSeason.TURRET_KD;
+
     private double integralSum = 0.0;
     private double lastError = 0.0;
     private double maxIntegralSum = 100.0;
@@ -78,7 +85,7 @@ public class RTPAxon {
         integralSum = 0.0;
         lastError = 0.0;
         maxIntegralSum = 100.0;
-        maxPower = 0.5;
+        maxPower = HardwareDecodeRobotBioBuzzSeason.TURRET_MAX_POWER;
         cliffs = 0;
         pidTimer.reset();
     }
